@@ -9,7 +9,17 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 
+expect fun getTimeMillis(): Long
+expect fun getStartup(): Long
+
 fun main() {
+
+    val current = getTimeMillis()
+
+    val start = getStartup()
+
+    println("jvm start = ${current - start}")
+
     val client = HttpClient()
 
     val randomNumUrl = "https://random-num-x5ht4amjia-uc.a.run.app/"
@@ -18,6 +28,10 @@ fun main() {
     embeddedServer(CIO, port = 8080) {
         routing {
             get("/") {
+                val t = getTimeMillis()
+
+                println("ms = ${t - start}")
+
                 val num = client.get(randomNumUrl).bodyAsText().toInt()
                 val words = List(num) {
                     async {
@@ -27,6 +41,9 @@ fun main() {
                 call.respondText(words.joinToString(" "))
             }
         }
+    }.also {
+        val s = getTimeMillis()
+        println("start = ${s - start}")
     }.start(wait = true).addShutdownHook {
         client.close()
     }
